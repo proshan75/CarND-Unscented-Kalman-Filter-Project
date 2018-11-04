@@ -64,9 +64,19 @@ public:
   ///* Augmented state dimension
   int n_aug_;
 
+  ///* Sigma point dimension
+  int n_sigma_;
+
   ///* Sigma point spreading parameter
   double lambda_;
 
+  ///* previous timestamp
+  long long previous_timestamp_, delta_t;
+
+  ///* tool object used to compute RMSE and angle normalization
+  Tools tools;
+  MatrixXd R_laser_;
+  MatrixXd R_radar_;
 
   /**
    * Constructor
