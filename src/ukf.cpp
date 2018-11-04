@@ -1,7 +1,6 @@
 #include "ukf.h"
 #include "Eigen/Dense"
 #include <iostream>
-#include "tools.h"
 
 using namespace std;
 using Eigen::MatrixXd;
@@ -367,7 +366,6 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     //calculate cross correlation matrix
     Tc.fill(0.0);
     VectorXd x_diff;
-    VectorXd z_diff;
     for (int i = 0; i < n_sigma_; i++)
     {
         x_diff = Xsig_pred_.col(i) - x_;
@@ -456,7 +454,6 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     //calculate cross correlation matrix
     Tc.fill(0.0);
     VectorXd x_diff;
-    VectorXd z_diff;
     for (int i = 0; i < n_sigma_; i++)
     {
         x_diff = Xsig_pred_.col(i) - x_;
