@@ -28,10 +28,10 @@ UKF::UKF() {
     P_ = MatrixXd(n_x_, n_x_);
 
     // Process noise standard deviation longitudinal acceleration in m/s^2
-    std_a_ = 30;
+    std_a_ = 1.5;
 
     // Process noise standard deviation yaw acceleration in rad/s^2
-    std_yawdd_ = 30;
+    std_yawdd_ = 0.5;
 
     //DO NOT MODIFY measurement noise values below these are provided by the sensor manufacturer.
     // Laser measurement noise standard deviation position1 in m
@@ -67,6 +67,7 @@ UKF::UKF() {
     n_sigma_ = 2 * n_aug_ + 1;
     // define weights verctor
     weights_ = VectorXd(n_sigma_);
+
     // define measurement covariance matrix - radar
     ////set measurement dimension, radar can measure r, phi, and r_dot
     int n_z_radar = 3;
@@ -154,7 +155,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
         }
         //cout << " weights_: " << weights_ << endl;
 
-        // done initializing, no need to predict or update
+    // done initializing, no need to predict or update
         is_initialized_ = true;
         return;
     }
@@ -246,12 +247,6 @@ void UKF::Prediction(double delta_t) {
         nu = Xsig_aug(5, i);
         nu_rate = Xsig_aug(6, i);
 
-        v_pred = v + (delta_t * nu);
-        psi_pred = psi +
-            (psi_rate * delta_t) +
-            (0.5 * delta_t * delta_t * nu_rate);
-        psi_rate_pred = psi_rate + (delta_t * nu_rate);
-
         if (fabs(psi_rate) <= epsilon)
         {
             //std::cout << "psi_rate equals to zero: " << fabs(psi_rate) << std::endl;
@@ -274,6 +269,12 @@ void UKF::Prediction(double delta_t) {
                 (v / psi_rate) * (-1 * cos(psi + (psi_rate * delta_t)) + cos(psi)) +
                 (0.5 * delta_t * delta_t * sin(psi) * nu);
         }
+
+        v_pred = v + (delta_t * nu);
+        psi_pred = psi +
+            (psi_rate * delta_t) +
+            (0.5 * delta_t * delta_t * nu_rate);
+        psi_rate_pred = psi_rate + (delta_t * nu_rate);
 
         Xsig_pred_(0, i) = px_pred;
         Xsig_pred_(1, i) = py_pred;
@@ -401,6 +402,10 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     cout << "P_ = " << P_ << endl;
 
     //cout << "Updating Lidar done.." << endl;
+
+    // calculate NIS for radar
+    float NIS_lidar = z_diff.transpose() * S.inverse() * z_diff;
+    cout << "NIS_lidar: " << NIS_lidar << endl;
 }
 
 /**
@@ -429,14 +434,21 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
     //transform sigma points into measurement space
     Zsig.fill(0.0);
-    double rho, phi, rho_dot;
+    double rho, psi, rho_dot;
+    double px, py, v, phi;
     for (int i = 0; i < n_sigma_; i++)
     {
-        rho = sqrt(Xsig_pred_(0, i) * Xsig_pred_(0, i) + Xsig_pred_(1, i) * Xsig_pred_(1, i));
+        px = Xsig_pred_(0, i);
+        py = Xsig_pred_(1, i);
+        v = Xsig_pred_(2, i);
+        phi = Xsig_pred_(3, i);
+
+        rho = sqrt(px * px + py * py);
+        psi = atan2(py, px);
+        rho_dot = (px * v * cos(phi) + py * v * sin(phi)) / rho;
+
         Zsig(0, i) = rho;
-        phi = atan2(Xsig_pred_(1, i), Xsig_pred_(0, i));
-        Zsig(1, i) = phi;
-        rho_dot = (Xsig_pred_(0, i) * Xsig_pred_(2, i) * cos(Xsig_pred_(3, i)) + Xsig_pred_(1, i) * Xsig_pred_(2, i) * sin(Xsig_pred_(3, i))) / rho;
+        Zsig(1, i) = psi;
         Zsig(2, i) = rho_dot;
     }
     //std::cout << "Zsig calculated: " << Zsig << std::endl;
@@ -451,7 +463,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
     //calculate innovation covariance matrix S
     S.fill(0.0);
-    VectorXd z_diff = VectorXd(n_z);
+    VectorXd z_diff;
     for (int i = 0; i < n_sigma_; i++)
     {
         z_diff = Zsig.col(i) - z_pred;
@@ -504,4 +516,8 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     cout << "P_ = " << P_ << endl;
 
     //cout << "Updating Radar done.." << endl;
+
+    // calculate NIS for radar
+    float NIS_radar = z_diff.transpose() * S.inverse() * z_diff;
+    cout << "NIS_radar: " << NIS_radar << endl;
 }
