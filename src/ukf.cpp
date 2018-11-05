@@ -111,7 +111,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
             /**
             Convert radar from polar to cartesian coordinates and initialize state.
             */
-            cout << "Initializing radar package..." << endl;
+            //cout << "Initializing radar package..." << endl;
             double rho = meas_package.raw_measurements_[0];
             double phi = meas_package.raw_measurements_[1];
             double rho_dot = meas_package.raw_measurements_[2];
@@ -128,11 +128,11 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
             /**
             Initialize state.
             */
-            cout << "Initializing laser package... " << endl;
+            //cout << "Initializing laser package... " << endl;
             x_ << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0, 0, 0;
         }
 
-        cout << " initialized x_: " << x_ << endl;
+        //cout << " initialized x_: " << x_ << endl;
         previous_timestamp_ = meas_package.timestamp_;
 
         R_radar_.fill(0.0);
@@ -152,7 +152,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
             else
                 weights_(i) = 1 / (2 * (lambda_ + n_aug_));
         }
-        cout << " weights_: " << weights_ << endl;
+        //cout << " weights_: " << weights_ << endl;
 
         // done initializing, no need to predict or update
         is_initialized_ = true;
@@ -172,12 +172,12 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     //////////////////////////////////////////////
     if (meas_package.sensor_type_ == MeasurementPackage::RADAR && use_radar_) {
         // Radar updates
-        cout << "Updating radar measurement ..." << endl;
+        //cout << "Updating radar measurement ..." << endl;
         UpdateRadar(meas_package);
     }
     else if (meas_package.sensor_type_ == MeasurementPackage::LASER && use_laser_) {
         // Laser updates
-        cout << "Updating laser measurement ..." << endl;
+        //cout << "Updating laser measurement ..." << endl;
         UpdateLidar(meas_package);
     }
 }
@@ -227,7 +227,7 @@ void UKF::Prediction(double delta_t) {
         Xsig_aug.col(i + n_aug_) = x_aug - sqrt(lambda_ + n_aug_)*A.col(i - 1);
     }
 
-    cout << "Xsig_aug: " << Xsig_aug << endl;
+    //cout << "Xsig_aug: " << Xsig_aug << endl;
 
     //////////////////////////////////////////////
     //////////  Predict Sigma points  ////////////
@@ -344,7 +344,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
         Zsig(1, i) = Xsig_pred_(1, i);
     }
 
-    std::cout << "Zsig in updating lidar: " << Zsig << std::endl;
+    //std::cout << "Zsig in updating lidar: " << Zsig << std::endl;
     //calculate mean predicted measurement
     z_pred.fill(0.0);
     for (int i = 0; i < n_sigma_; i++)
@@ -352,7 +352,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
         z_pred += weights_(i) * Zsig.col(i);
     }
 
-    cout << "z_pred in lidar updated as : " << z_pred << endl;
+    //cout << "z_pred in lidar updated as : " << z_pred << endl;
 
     //calculate innovation covariance matrix S
     S.fill(0.0);
@@ -365,7 +365,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     }
     S += R_laser_;
 
-    cout << "measurement covariance matrix S in lidar: " << S << endl;
+    //cout << "measurement covariance matrix S in lidar: " << S << endl;
 
 
     //////////////////////////////////////////////
@@ -400,7 +400,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     cout << "x_ = " << x_ << endl;
     cout << "P_ = " << P_ << endl;
 
-    cout << "Updating Lidar done.." << endl;
+    //cout << "Updating Lidar done.." << endl;
 }
 
 /**
@@ -436,10 +436,10 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
         Zsig(0, i) = rho;
         phi = atan2(Xsig_pred_(1, i), Xsig_pred_(0, i));
         Zsig(1, i) = phi;
-        rho_dot = ((Xsig_pred_(0, i) * cos(Xsig_pred_(3, i)) + Xsig_pred_(1, i) * sin(Xsig_pred_(3, i))) * Xsig_pred_(2, i)) / rho;
+        rho_dot = (Xsig_pred_(0, i) * Xsig_pred_(2, i) * cos(Xsig_pred_(3, i)) + Xsig_pred_(1, i) * Xsig_pred_(2, i) * sin(Xsig_pred_(3, i))) / rho;
         Zsig(2, i) = rho_dot;
     }
-    std::cout << "Zsig calculated: " << Zsig << std::endl;
+    //std::cout << "Zsig calculated: " << Zsig << std::endl;
     //calculate mean predicted measurement
     z_pred.fill(0.0);
     for (int i = 0; i < n_sigma_; i++)
@@ -447,7 +447,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
         z_pred += weights_(i) * Zsig.col(i);
     }
 
-    cout << "z_pred updated as : " << z_pred << endl;
+    //cout << "z_pred updated as : " << z_pred << endl;
 
     //calculate innovation covariance matrix S
     S.fill(0.0);
@@ -464,7 +464,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
     S += R_radar_;
 
-    cout << "measurement covariance matrix S: " << S << endl;
+    //cout << "measurement covariance matrix S: " << S << endl;
 
     //////////////////////////////////////////////
     ///////////////  Update Radar  ///////////////
@@ -503,5 +503,5 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     cout << "x_ = " << x_ << endl;
     cout << "P_ = " << P_ << endl;
 
-    cout << "Updating Radar done.." << endl;
+    //cout << "Updating Radar done.." << endl;
 }
